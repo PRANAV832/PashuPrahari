@@ -89,7 +89,8 @@ const ALERTS_STORAGE_KEY = 'pashuprahari_mock_alerts_store';
 export const alertService = {
   async fetchLiveAlerts(role) {
     try {
-      const res = await fetch('http://localhost:5000/api/cases');
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${API_BASE_URL}/cases`);
       if (res.ok) {
         const data = await res.json();
         if (data.cases && Array.isArray(data.cases)) {

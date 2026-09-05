@@ -127,7 +127,7 @@ This enables veterinary authorities to identify potentially concerning patterns 
 🏗️ Architecture Overview
 
 The repository is modularly structured into three core domains:
-
+```text
 PashuPrahari/
 │
 ├── Frontend/              # React + Vite + TailwindCSS + Leaflet GIS
@@ -137,7 +137,7 @@ PashuPrahari/
 ├── .env.example           # Environment variable template
 ├── .gitignore             # Git ignore configuration
 └── README.md              # Project documentation
-
+```
 System Architecture
 
                     ┌─────────────────────┐

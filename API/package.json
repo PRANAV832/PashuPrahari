@@ -1,0 +1,20 @@
+{
+  "name": "pashuprahari-ai-rules",
+  "version": "1.0.0",
+  "description": "AI symptom extraction and deterministic risk scoring engine for PashuPrahari (SIH 2026)",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "demo": "node tests/demo.js"
+  },
+  "keywords": [
+    "veterinary",
+    "syndromic-surveillance",
+    "ai",
+    "rule-engine",
+    "pashuprahari"
+  ],
+  "author": "PashuPrahari Team (Member 3 - AI & Rules)",
+  "license": "MIT"
+}

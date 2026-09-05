@@ -339,6 +339,10 @@ export function simulateVernacularExtraction(rawText, options = {}) {
     text.includes('milk yield') ||
     text.includes('giving much milk') ||
     text.includes('producing much milk') ||
+    text.includes('not giving milk') ||
+    text.includes('no milk') ||
+    text.includes('stopped giving milk') ||
+    text.includes('drop in milk') ||
     text.includes('दूध कम') ||
     text.includes('दूध कमी')
   ) {
@@ -369,6 +373,10 @@ export function simulateVernacularExtraction(rawText, options = {}) {
     text.includes('walking mein problem') ||
     text.includes('chalne mein dikkat') ||
     text.includes('chalne mein problem') ||
+    text.includes('not able to walk') ||
+    text.includes('unable to walk') ||
+    text.includes('cannot walk') ||
+    text.includes("can't walk") ||
     text.includes('नीट चालत नाही') ||
     text.includes('चल नहीं पा रही') ||
     text.includes('लंगड') ||

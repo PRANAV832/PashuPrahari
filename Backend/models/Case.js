@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const caseSchema = new mongoose.Schema(
   {
+    id: {
+      type: String,
+      trim: true,
+      index: true
+    },
     farmerName: {
       type: String,
       required: [true, 'farmerName is required'],
@@ -15,6 +20,16 @@ const caseSchema = new mongoose.Schema(
     village: {
       type: String,
       required: [true, 'village is required'],
+      trim: true
+    },
+    taluka: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    district: {
+      type: String,
+      default: 'Thane',
       trim: true
     },
     species: {
@@ -145,7 +160,7 @@ const caseSchema = new mongoose.Schema(
 // Virtual transformation to ensure clean JSON output
 caseSchema.set('toJSON', {
   transform: (doc, ret) => {
-    ret.id = ret._id ? ret._id.toString() : ret.id;
+    ret.id = ret.id || (ret._id ? ret._id.toString() : null);
     if (!ret.assignedVet && ret.assignedTo) {
       ret.assignedVet = ret.assignedTo;
     }

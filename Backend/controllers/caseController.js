@@ -780,10 +780,59 @@ const analyzeReport = async (req, res, next) => {
   }
 };
 
+const seedInitialCases = async () => {
+  try {
+    if (!isDbConnected()) return;
+
+    for (const c of inMemoryCases) {
+      const customId = c.id || c._id;
+      if (!customId) continue;
+
+      const exists = await Case.findOne({ id: customId });
+      if (!exists) {
+        const payload = {
+          id: customId,
+          farmerName: c.farmerName,
+          farmerPhone: c.farmerPhone || '',
+          village: c.village,
+          taluka: c.taluka || '',
+          district: c.district || 'Thane',
+          species: c.species,
+          rawInput: c.rawInput || (Array.isArray(c.symptoms) ? c.symptoms.join(', ') : ''),
+          symptoms: Array.isArray(c.symptoms) ? c.symptoms : [],
+          affectedAnimals: c.affectedAnimals !== undefined ? c.affectedAnimals : 1,
+          deaths: c.deaths !== undefined ? c.deaths : 0,
+          duration: c.duration || 'Unknown',
+          vaccinationStatus: c.vaccinationStatus || 'Unknown',
+          lat: c.lat !== undefined ? c.lat : (c.latitude || null),
+          lng: c.lng !== undefined ? c.lng : (c.longitude || null),
+          riskScore: c.riskScore !== undefined ? c.riskScore : 0,
+          riskLevel: c.riskLevel || 'LOW',
+          status: c.status || 'REPORTED',
+          assignedTo: c.assignedTo || c.assignedVet || null,
+          assignedVet: c.assignedVet || c.assignedTo || null,
+          assignedVetId: c.assignedVetId || null,
+          assignedRole: c.assignedRole || (c.assignedVet ? 'Veterinary Officer' : null),
+          treatmentNotes: c.treatmentNotes || '',
+          labReferral: Boolean(c.labReferral),
+          labNotes: c.labNotes || '',
+          createdAt: c.createdAt ? new Date(c.createdAt) : new Date(),
+          updatedAt: c.updatedAt ? new Date(c.updatedAt) : new Date()
+        };
+
+        await Case.create(payload);
+      }
+    }
+  } catch (err) {
+    console.warn('[Case Seeder Warning]', err.message);
+  }
+};
+
 module.exports = {
   createReport,
   analyzeReport,
   getCases,
   getCaseById,
-  updateCase
+  updateCase,
+  seedInitialCases
 };

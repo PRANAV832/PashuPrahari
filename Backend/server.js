@@ -7,6 +7,7 @@ const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const { seedInitialUsers } = require('./controllers/authController');
+const { seedInitialCases } = require('./controllers/caseController');
 const { notFoundHandler, globalErrorHandler } = require('./middleware/errorHandler');
 
 // Load environment variables
@@ -39,6 +40,7 @@ const startServer = async () => {
   // Connect to DB asynchronously
   await connectDB();
   await seedInitialUsers();
+  await seedInitialCases();
 };
 
 if (require.main === module) {

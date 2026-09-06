@@ -326,7 +326,9 @@ const createReport = async (req, res, next) => {
     } = req.body;
 
     const inputForAi = (rawInput && rawInput.trim()) || (typeof symptoms === 'string' ? symptoms : '');
-    let finalSymptoms = Array.isArray(symptoms) ? symptoms : [];
+    let finalSymptoms = Array.isArray(symptoms)
+      ? symptoms.filter((s) => typeof s === 'string' && s.trim())
+      : [];
     let finalAiAnalysis = aiAnalysis || {
       possibleConditions: [],
       explanation: '',
@@ -335,7 +337,12 @@ const createReport = async (req, res, next) => {
     let finalRiskScore = riskScore !== undefined ? riskScore : 0;
     let finalRiskLevel = riskLevel || 'Pending';
 
-    if (inputForAi && inputForAi.trim()) {
+    // Only invoke AI processing if symptoms were not pre-extracted OR risk analysis is missing
+    const needsAiExtraction = finalSymptoms.length === 0;
+    const needsRiskAnalysis =
+      !finalAiAnalysis?.possibleConditions?.length || finalRiskScore === 0;
+
+    if ((needsAiExtraction || needsRiskAnalysis) && inputForAi && inputForAi.trim()) {
       try {
         const path = require('path');
         const { pathToFileURL } = require('url');
@@ -347,16 +354,25 @@ const createReport = async (req, res, next) => {
           deaths: Number(deaths) || 0
         });
 
-        if (aiResult.symptoms && aiResult.symptoms.length > 0) {
+        // Only populate symptoms if none were provided by the client
+        if (finalSymptoms.length === 0 && aiResult.symptoms && aiResult.symptoms.length > 0) {
           finalSymptoms = aiResult.symptoms;
         }
-        if (aiResult.aiAnalysis && (Array.isArray(aiResult.aiAnalysis.possibleConditions) || aiResult.aiAnalysis.explanation)) {
+        if (
+          (!finalAiAnalysis.possibleConditions || finalAiAnalysis.possibleConditions.length === 0) &&
+          aiResult.aiAnalysis &&
+          (Array.isArray(aiResult.aiAnalysis.possibleConditions) || aiResult.aiAnalysis.explanation)
+        ) {
           finalAiAnalysis = aiResult.aiAnalysis;
         }
-        if (aiResult.riskScore !== undefined && aiResult.riskScore > 0) {
+        if (finalRiskScore === 0 && aiResult.riskScore !== undefined && aiResult.riskScore > 0) {
           finalRiskScore = aiResult.riskScore;
         }
-        if (aiResult.riskLevel && aiResult.riskLevel !== 'Pending') {
+        if (
+          (!finalRiskLevel || finalRiskLevel === 'Pending') &&
+          aiResult.riskLevel &&
+          aiResult.riskLevel !== 'Pending'
+        ) {
           finalRiskLevel = aiResult.riskLevel;
         }
       } catch (aiErr) {
@@ -371,7 +387,7 @@ const createReport = async (req, res, next) => {
       farmerPhone: farmerPhone || '',
       village,
       species,
-      rawInput: rawInput || (typeof symptoms === 'string' ? symptoms : ''),
+      rawInput: (rawInput && rawInput.trim()) || (typeof symptoms === 'string' ? symptoms.trim() : '') || inputForAi,
       symptoms: finalSymptoms,
       affectedAnimals: affectedAnimals !== undefined ? affectedAnimals : 1,
       deaths: deaths !== undefined ? deaths : 0,

@@ -57,10 +57,14 @@ export const VoiceSymptomInput = ({
     }
   }, [isListening]);
 
-  // Sync speech transcript to parent form state
+  const baseTextRef = React.useRef('');
+
+  // Sync speech transcript to parent form state by appending onto base text
   useEffect(() => {
-    if (transcript) {
-      onChange({ target: { name: 'symptoms', value: transcript } });
+    if (transcript && transcript.trim()) {
+      const base = baseTextRef.current;
+      const combined = base ? (base + ' ' + transcript.trim()).trim() : transcript.trim();
+      onChange({ target: { name: 'symptoms', value: combined } });
       setHasRecordedOnce(true);
     }
   }, [transcript]);
@@ -71,6 +75,8 @@ export const VoiceSymptomInput = ({
     if (isListening) {
       stop();
     } else {
+      // Capture current textarea content so newly spoken words append cleanly without overwriting
+      baseTextRef.current = (value || '').trim();
       setHasRecordedOnce(true);
       start();
     }
@@ -78,6 +84,7 @@ export const VoiceSymptomInput = ({
 
   const handleResetRecording = () => {
     if (aiState === AI_UI_STATES.ANALYZING) return;
+    baseTextRef.current = '';
     reset();
     onChange({ target: { name: 'symptoms', value: '' } });
     setHasRecordedOnce(false);

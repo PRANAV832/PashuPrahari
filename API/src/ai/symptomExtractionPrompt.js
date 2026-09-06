@@ -47,6 +47,8 @@ export const CLINICAL_SYMPTOM_VOCABULARY = [
   'Difficulty eating',
   'Difficulty chewing',
   'Difficulty swallowing',
+  'Polydipsia',
+  'Increased Thirst',
   'Excessive thirst',
   'Reduced water intake',
   'Excessive water intake',
@@ -125,6 +127,7 @@ export const CLINICAL_SYMPTOM_VOCABULARY = [
   // F. EYE
   'Eye Discharge',
   'Watery eyes',
+  'Sunken eyes',
   'Excessive tearing',
   'Red eyes',
   'Eye swelling',
@@ -146,6 +149,7 @@ export const CLINICAL_SYMPTOM_VOCABULARY = [
   'Incoordination',
   'Ataxia',
   'Paralysis',
+  'Teeth grinding',
   'Weakness of limbs',
   'Hind-limb weakness',
   'Staggering',
@@ -156,11 +160,13 @@ export const CLINICAL_SYMPTOM_VOCABULARY = [
 
   // H. DIGESTIVE / GASTROINTESTINAL
   'Diarrhea',
+  'Severe watery diarrhea',
   'Bloody diarrhea',
   'Watery diarrhea',
   'Constipation',
   'Abdominal pain',
   'Abdominal distension',
+  'Abdominal Swelling',
   'Bloat',
   'Excessive gas',
   'Vomiting',
@@ -310,6 +316,8 @@ Your core duty is to process unstructured natural-language incident reports from
   - "अचानक मरणे" / "अचानक मौत" / "chickens died" -> "Sudden Mortality" or "Increased Mortality"
 
 ### 2. STRICT RULES FOR SYMPTOM EXTRACTION:
+- **EXHAUSTIVE EXTRACTION:**
+  Extract EVERY clinically relevant symptom, sign, production change, behavioral change, physical finding, and relevant health/vaccination information explicitly mentioned in the complaint. Do not stop after finding the most obvious symptom. Do not omit secondary, constitutional, production, mobility, skin, ocular, gastrointestinal, respiratory, or other clinically relevant findings.
 - **NO SENTENCE ECHOING:** NEVER copy full sentences or translated phrases as a symptom token!
   - BAD: ["cows is not giving much milk and she is not able to get up"]
   - GOOD: ["Reduced milk production", "Difficulty standing / inability to stand"]
@@ -344,7 +352,8 @@ Return ONLY valid JSON with no markdown wrapping or additional text:
   "possibleConditions": ["Specific Plausible Disease Name 1"],
   "explanation": "Brief 1-2 sentence clinical explanation connecting the symptoms, species, and history.",
   "recommendations": ["Immediate actionable recommendation 1", "Actionable recommendation 2"]
-}`;
+}
+`;
 
 /**
  * Builds the user prompt wrapper for symptom extraction and clinical analysis.
@@ -358,7 +367,9 @@ export function buildSymptomExtractionUserPrompt(rawText, species = 'Cattle') {
 ${(rawText || '').trim()}
 """
 
-Extract concise standardized English clinical symptoms and classify the specific plausible veterinary disease/condition.
+EXHAUSTIVE EXTRACTION:
+Extract EVERY clinically relevant symptom, sign, production change, behavioral change, physical finding, and relevant health/vaccination information explicitly mentioned in the complaint. Do not omit secondary, constitutional, production, mobility, skin, ocular, gastrointestinal, respiratory, or other clinically relevant findings.
+Normalize all extracted symptoms into concise standardized English clinical labels. Classify the specific plausible veterinary disease/condition.
 Return ONLY valid JSON with keys "symptoms", "possibleConditions", "explanation", "recommendations".`;
 }
 

@@ -47,15 +47,34 @@ export const ReportSuccessCard = ({ reportData, onReset }) => {
             value={`${reportData.duration} · ${reportData.vaccinationStatus}`}
           />
 
-          {/* Symptoms spans full width */}
+          {/* Original Complaint Transcript */}
           <div className="sm:col-span-2">
             <span className="block text-xs font-medium text-slate-500 mb-1">
               {t('report.symptoms.prompt')}
             </span>
             <p className="text-sm text-slate-800 leading-relaxed bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3 italic">
-              "{reportData.symptoms}"
+              "{reportData.rawInput || reportData.rawComplaint || (typeof reportData.symptoms === 'string' ? reportData.symptoms : (Array.isArray(reportData.symptoms) ? reportData.symptoms.join(', ') : ''))}"
             </p>
           </div>
+
+          {/* Identified Clinical Symptoms Badges */}
+          {Array.isArray(reportData.symptoms) && reportData.symptoms.length > 0 && (
+            <div className="sm:col-span-2 space-y-1.5">
+              <span className="block text-xs font-semibold text-slate-700">
+                {t('report.ai.detectedSymptoms') || 'Identified Symptoms'}:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {reportData.symptoms.map((sym, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold shadow-2xs"
+                  >
+                    {typeof sym === 'string' ? sym : sym?.name || JSON.stringify(sym)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* GPS */}
           <div className="sm:col-span-2">

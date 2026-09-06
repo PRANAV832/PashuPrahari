@@ -286,13 +286,22 @@ export const FarmerForm = ({ onSubmitSuccess }) => {
       village:           formData.village.trim() || user?.village || 'Thane Rural',
       species:           formData.species,
       rawInput:          formData.symptoms.trim(),
-      symptoms:          formData.symptoms.trim(),
+      symptoms:          (analysisData?.symptoms && Array.isArray(analysisData.symptoms) && analysisData.symptoms.length > 0)
+        ? analysisData.symptoms
+        : [],
       affectedAnimals:   Number(formData.affectedAnimals),
       deaths:            Number(formData.deaths),
       duration:          formData.duration,
       vaccinationStatus: formData.vaccinationStatus,
       lat:               finalLat,
       lng:               finalLng,
+      aiAnalysis:        analysisData ? {
+        possibleConditions: analysisData.possibleConditions || [],
+        explanation: analysisData.explanation || '',
+        recommendations: analysisData.recommendations || []
+      } : undefined,
+      riskScore:         analysisData?.riskScore,
+      riskLevel:         analysisData?.riskLevel,
     };
 
     console.log('✅ [PashuPrahari Frontend] Submitting Report to Backend:', structuredPayload);
@@ -306,16 +315,21 @@ export const FarmerForm = ({ onSubmitSuccess }) => {
           farmerName: savedCase.farmerName || formData.farmerName.trim(),
           village: savedCase.village || formData.village.trim(),
           species: savedCase.species || formData.species,
-          symptoms: savedCase.symptoms || formData.symptoms.trim(),
+          rawInput: savedCase.rawInput || formData.symptoms.trim(),
+          symptoms: (Array.isArray(savedCase.symptoms) && savedCase.symptoms.length > 0)
+            ? savedCase.symptoms
+            : (Array.isArray(analysisData?.symptoms) && analysisData.symptoms.length > 0)
+            ? analysisData.symptoms
+            : [formData.symptoms.trim()],
           affectedAnimals: savedCase.affectedAnimals ?? formData.affectedAnimals,
           deaths: savedCase.deaths ?? formData.deaths,
           duration: savedCase.duration || formData.duration,
           vaccinationStatus: savedCase.vaccinationStatus || formData.vaccinationStatus,
           latitude: savedCase.lat ?? finalLat,
           longitude: savedCase.lng ?? finalLng,
-          riskScore: savedCase.riskScore,
-          riskLevel: savedCase.riskLevel,
-          aiAnalysis: savedCase.aiAnalysis,
+          riskScore: savedCase.riskScore ?? analysisData?.riskScore,
+          riskLevel: savedCase.riskLevel || analysisData?.riskLevel,
+          aiAnalysis: savedCase.aiAnalysis || analysisData,
           id: savedCase.id || savedCase._id,
         });
       }

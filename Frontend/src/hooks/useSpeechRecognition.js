@@ -19,9 +19,12 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
 
   const recognitionRef = useRef(null);
   const isExplicitStopRef = useRef(false);
+  const isListeningRef = useRef(false);
+  const accumulatedFinalRef = useRef('');
+  const currentInstanceFinalRef = useRef('');
 
   // Initialize and configure recognition instance
-  const getRecognitionInstance = useCallback(() => {
+  const createRecognition = useCallback(() => {
     if (!isSupported) return null;
 
     const SpeechRecognition =
@@ -35,8 +38,8 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
 
     recognition.onstart = () => {
       setIsListening(true);
+      isListeningRef.current = true;
       setError(null);
-      isExplicitStopRef.current = false;
     };
 
     recognition.onresult = (event) => {
@@ -54,8 +57,15 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
         }
       }
 
-      if (finalSpeech) {
-        setTranscript(finalSpeech.trim());
+      currentInstanceFinalRef.current = finalSpeech.trim();
+
+      const combinedFinal = (
+        accumulatedFinalRef.current +
+        (currentInstanceFinalRef.current ? ' ' + currentInstanceFinalRef.current : '')
+      ).trim();
+
+      if (combinedFinal) {
+        setTranscript(combinedFinal);
       }
       setInterimTranscript(interimSpeech);
     };
@@ -68,21 +78,23 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
         case 'service-not-allowed':
           errorMessage =
             'Microphone access was denied. Please allow microphone permissions in your browser address bar to use voice input.';
+          isExplicitStopRef.current = true;
           break;
         case 'no-speech':
-          errorMessage =
-            'No speech was detected. Please try speaking closer to your microphone or click "Start again".';
-          break;
+          // Brief silence detected by browser engine, handled cleanly in onend
+          return;
         case 'audio-capture':
           errorMessage =
             'No microphone was found. Please ensure a working audio input device is connected.';
+          isExplicitStopRef.current = true;
           break;
         case 'network':
           errorMessage =
             'Network communication error. Voice recognition requires an active internet connection.';
+          isExplicitStopRef.current = true;
           break;
         case 'aborted':
-          // Recognition was aborted by user or system, don't set alarming error
+          // Recognition was aborted by user or system, do not set alarming error
           return;
         default:
           errorMessage = `Speech recognition error: ${event.error}. Please try again.`;
@@ -91,11 +103,36 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
 
       setError(errorMessage);
       setIsListening(false);
+      isListeningRef.current = false;
     };
 
     recognition.onend = () => {
-      setIsListening(false);
       setInterimTranscript('');
+
+      // Commit any confirmed final speech from the ended instance to accumulated buffer
+      if (currentInstanceFinalRef.current) {
+        accumulatedFinalRef.current = (
+          accumulatedFinalRef.current + ' ' + currentInstanceFinalRef.current
+        ).trim();
+        currentInstanceFinalRef.current = '';
+      }
+
+      // If recognition ended due to browser silence timeout while user is still recording, auto-restart
+      if (!isExplicitStopRef.current && isListeningRef.current) {
+        try {
+          const nextInstance = createRecognition();
+          recognitionRef.current = nextInstance;
+          if (nextInstance) {
+            nextInstance.start();
+          }
+        } catch (e) {
+          setIsListening(false);
+          isListeningRef.current = false;
+        }
+      } else {
+        setIsListening(false);
+        isListeningRef.current = false;
+      }
     };
 
     return recognition;
@@ -120,7 +157,14 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
       }
 
       setError(null);
-      const instance = getRecognitionInstance();
+      isExplicitStopRef.current = false;
+      isListeningRef.current = true;
+      accumulatedFinalRef.current = '';
+      currentInstanceFinalRef.current = '';
+      setTranscript('');
+      setInterimTranscript('');
+
+      const instance = createRecognition();
       recognitionRef.current = instance;
 
       if (instance) {
@@ -128,18 +172,20 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
       }
     } catch (err) {
       if (err.name === 'InvalidStateError') {
-        // Already started
         setIsListening(true);
+        isListeningRef.current = true;
       } else {
         setError('Could not start microphone. Please check browser permissions.');
         setIsListening(false);
+        isListeningRef.current = false;
       }
     }
-  }, [isSupported, getRecognitionInstance]);
+  }, [isSupported, createRecognition]);
 
   // Stop listening
   const stop = useCallback(() => {
     isExplicitStopRef.current = true;
+    isListeningRef.current = false;
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -153,25 +199,35 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
 
   // Reset transcript and error
   const reset = useCallback(() => {
-    stop();
+    isExplicitStopRef.current = true;
+    isListeningRef.current = false;
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {
+        // ignore error
+      }
+    }
+    accumulatedFinalRef.current = '';
+    currentInstanceFinalRef.current = '';
+    setIsListening(false);
     setTranscript('');
     setInterimTranscript('');
     setError(null);
-  }, [stop]);
+  }, []);
 
   // Change language (e.g. 'hi-IN', 'mr-IN', 'en-IN')
   const setLanguage = useCallback(
     (newLang) => {
       setLanguageState(newLang);
-      if (isListening && recognitionRef.current) {
+      if (isListeningRef.current && recognitionRef.current) {
         try {
           recognitionRef.current.abort();
         } catch {
           // ignore
         }
-        // restart with new language
         setTimeout(() => {
-          if (isSupported) {
+          if (isSupported && isListeningRef.current) {
             const SpeechRecognition =
               window.SpeechRecognition || window.webkitSpeechRecognition;
             const instance = new SpeechRecognition();
@@ -184,12 +240,14 @@ export const useSpeechRecognition = (initialLanguage = 'hi-IN') => {
         }, 100);
       }
     },
-    [isListening, isSupported]
+    [isSupported]
   );
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      isExplicitStopRef.current = true;
+      isListeningRef.current = false;
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();

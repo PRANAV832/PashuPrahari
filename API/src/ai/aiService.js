@@ -262,6 +262,27 @@ export function simulateVernacularExtraction(rawText, options = {}) {
 
   const symptoms = new Set();
 
+  // Negative / Positive Safeguards
+  const isMilkNormal =
+    text.includes('giving milk normally') ||
+    text.includes('milk normally') ||
+    text.includes('normal milk') ||
+    text.includes('doodh normal') ||
+    text.includes('dudh normal');
+
+  const isWalkingNormal =
+    (text.includes('walks properly') ||
+      text.includes('walk properly') ||
+      text.includes('walking properly') ||
+      text.includes('walks normally') ||
+      text.includes('चालत आहे') ||
+      text.includes('नीट चालत आहे')) &&
+    !text.includes('not ') &&
+    !text.includes('nahi') &&
+    !text.includes('नाही') &&
+    !text.includes('cannot') &&
+    !text.includes('unable');
+
   // 1. Fever / High Fever
   if (
     text.includes('bukhar') ||
@@ -273,10 +294,15 @@ export function simulateVernacularExtraction(rawText, options = {}) {
     text.includes('बुखार') ||
     text.includes('ताप')
   ) {
-    if (text.includes('very high') || text.includes('khup taap') || text.includes('bahut tez')) {
+    symptoms.add('Fever');
+    if (
+      text.includes('very high') ||
+      text.includes('khup taap') ||
+      text.includes('bahut tez') ||
+      text.includes('तेज बुखार') ||
+      text.includes('high fever')
+    ) {
       symptoms.add('High fever');
-    } else {
-      symptoms.add('Fever');
     }
   }
 
@@ -332,21 +358,39 @@ export function simulateVernacularExtraction(rawText, options = {}) {
   }
 
   // 4. Reduced Milk Production / Drop in Milk Yield
-  if (
-    text.includes('doodh kam') ||
-    text.includes('dudh kami') ||
-    text.includes('dudh kami zala') ||
-    text.includes('milk yield') ||
-    text.includes('giving much milk') ||
-    text.includes('producing much milk') ||
-    text.includes('not giving milk') ||
-    text.includes('no milk') ||
-    text.includes('stopped giving milk') ||
-    text.includes('drop in milk') ||
-    text.includes('दूध कम') ||
-    text.includes('दूध कमी')
-  ) {
-    symptoms.add('Reduced milk production');
+  if (!isMilkNormal) {
+    if (
+      text.includes('doodh kam') ||
+      text.includes('dudh kami') ||
+      text.includes('dudh kami zala') ||
+      text.includes('milk yield') ||
+      text.includes('giving much milk') ||
+      text.includes('producing much milk') ||
+      text.includes('not giving milk') ||
+      text.includes('no milk') ||
+      text.includes('stopped giving milk') ||
+      text.includes('drop in milk') ||
+      text.includes('दूध कम') ||
+      text.includes('दूध कमी') ||
+      text.includes('दूधही कमी') ||
+      text.includes('दूध देत नाही') ||
+      text.includes('milk भी कम') ||
+      text.includes('milk कमी') ||
+      (text.includes('milk') &&
+        (text.includes('kam') ||
+          text.includes('kami') ||
+          text.includes('कमी') ||
+          text.includes('कम') ||
+          text.includes('stopped') ||
+          text.includes('drop'))) ||
+      (text.includes('दूध') &&
+        (text.includes('कमी') ||
+          text.includes('नाही') ||
+          text.includes('बंद') ||
+          text.includes('कम')))
+    ) {
+      symptoms.add('Reduced milk production');
+    }
   }
 
   // 5. Difficulty Standing / Inability to Stand
@@ -363,26 +407,31 @@ export function simulateVernacularExtraction(rawText, options = {}) {
   }
 
   // 6. Lameness / Difficulty Walking
-  if (
-    text.includes('langda') ||
-    text.includes('limp') ||
-    text.includes('lameness') ||
-    text.includes('properly walk') ||
-    text.includes('walk nahi') ||
-    text.includes('difficulty walking') ||
-    text.includes('walking mein problem') ||
-    text.includes('chalne mein dikkat') ||
-    text.includes('chalne mein problem') ||
-    text.includes('not able to walk') ||
-    text.includes('unable to walk') ||
-    text.includes('cannot walk') ||
-    text.includes("can't walk") ||
-    text.includes('नीट चालत नाही') ||
-    text.includes('चल नहीं पा रही') ||
-    text.includes('लंगड') ||
-    text.includes('लंगडा')
-  ) {
-    symptoms.add('Lameness');
+  if (!isWalkingNormal) {
+    if (
+      text.includes('langda') ||
+      text.includes('limp') ||
+      text.includes('lameness') ||
+      text.includes('properly walk') ||
+      text.includes('walk nahi') ||
+      text.includes('difficulty walking') ||
+      text.includes('walking mein problem') ||
+      text.includes('chalne mein dikkat') ||
+      text.includes('chalne mein problem') ||
+      text.includes('not able to walk') ||
+      text.includes('unable to walk') ||
+      text.includes('cannot walk') ||
+      text.includes("can't walk") ||
+      text.includes('नीट चालत नाही') ||
+      text.includes('चल नहीं पा रही') ||
+      text.includes('लंगड') ||
+      text.includes('लंगडा') ||
+      text.includes('लंगडत') ||
+      text.includes('चालताना ती limp') ||
+      text.includes('limping')
+    ) {
+      symptoms.add('Lameness');
+    }
   }
 
   // 7. Loss of Appetite / Reduced Feed Intake
@@ -405,13 +454,23 @@ export function simulateVernacularExtraction(rawText, options = {}) {
     text.includes('चारा') ||
     text.includes('भूक') ||
     text.includes('जेवण बंद') ||
-    text.includes('खात नाही')
+    text.includes('खात नाही') ||
+    (text.includes('food') &&
+      (text.includes('खात नाही') || text.includes('nahi kha') || text.includes('not eating')))
   ) {
     symptoms.add('Loss of Appetite');
   }
 
   // 8. Cough / Severe Cough
-  if (text.includes('khansi') || text.includes('khokla') || text.includes('cough') || text.includes('खोकला') || text.includes('खोकणे') || text.includes('खांसी')) {
+  if (
+    text.includes('khansi') ||
+    text.includes('khokla') ||
+    text.includes('cough') ||
+    text.includes('coughing') ||
+    text.includes('खोकला') ||
+    text.includes('खोकणे') ||
+    text.includes('खांसी')
+  ) {
     if (text.includes('severe') || text.includes('khup khokla') || text.includes('tez khansi')) {
       symptoms.add('Severe cough');
     } else if (text.includes('halki') || text.includes('mild') || text.includes('हल्की')) {
@@ -422,42 +481,204 @@ export function simulateVernacularExtraction(rawText, options = {}) {
   }
 
   // 9. Nasal Discharge
-  if (text.includes('naak') || text.includes('nasal') || text.includes('shembad') || text.includes('running nose') || text.includes('नाक') || text.includes('शेंबूड')) {
+  if (
+    text.includes('naak') ||
+    text.includes('nasal') ||
+    text.includes('shembad') ||
+    text.includes('running nose') ||
+    text.includes('नाक') ||
+    text.includes('शेंबूड') ||
+    (text.includes('nose') &&
+      (text.includes('discharge') || text.includes('running') || text.includes('liquid')))
+  ) {
     symptoms.add('Nasal Discharge');
   }
 
   // 10. Eye Discharge / Watery Eyes
-  if (text.includes('aankh') || text.includes('dolyatun') || text.includes('eye discharge') || text.includes('watery eye') || text.includes('डोळ्यातून') || text.includes('आंख से पानी')) {
+  if (
+    text.includes('aankh') ||
+    text.includes('dolyatun') ||
+    text.includes('eye discharge') ||
+    text.includes('watery eye') ||
+    text.includes('डोळ्यातून') ||
+    text.includes('आंख से पानी')
+  ) {
     symptoms.add('Eye Discharge');
   }
 
-  // 11. Lethargy / Weakness
-  if (text.includes('sust') || text.includes('thakan') || text.includes('weakness') || text.includes('letharg') || text.includes('dull') || text.includes('kamjori') || text.includes('सुस्त') || text.includes('थकवा') || text.includes('कमजोरी')) {
+  // 11. Sunken eyes
+  if (
+    text.includes('sunk') ||
+    text.includes('sunken') ||
+    text.includes('sunken eyes') ||
+    text.includes('eyes sunk') ||
+    text.includes('eyes look slightly sunk') ||
+    text.includes('धंसी हुई') ||
+    text.includes('डोळे खोल')
+  ) {
+    symptoms.add('Sunken eyes');
+  }
+
+  // 12. Weakness
+  if (
+    text.includes('weak') ||
+    text.includes('kamjor') ||
+    text.includes('कमजोर') ||
+    text.includes('ashakt') ||
+    text.includes('अशक्त') ||
+    text.includes('weakness') ||
+    text.includes('kamjori')
+  ) {
+    symptoms.add('Weakness');
+  }
+
+  // 13. Lethargy
+  if (
+    text.includes('sust') ||
+    text.includes('thakan') ||
+    text.includes('letharg') ||
+    text.includes('dull') ||
+    text.includes('tired') ||
+    text.includes('सुस्त') ||
+    text.includes('थकवा')
+  ) {
     symptoms.add('Lethargy');
   }
 
-  // 12. Diarrhea
-  if (text.includes('dast') || text.includes('loose motion') || text.includes('diarrhea') || text.includes('patla gobar') || text.includes('झाडा') || text.includes('पातळ शेण') || text.includes('दस्त') || text.includes('जुलाब')) {
-    symptoms.add('Diarrhea');
+  // 14. Diarrhea / Severe watery diarrhea
+  if (
+    text.includes('dast') ||
+    text.includes('loose motion') ||
+    text.includes('diarrhea') ||
+    text.includes('diarrhoea') ||
+    text.includes('patla gobar') ||
+    text.includes('झाडा') ||
+    text.includes('पातळ शेण') ||
+    text.includes('पतला दस्त') ||
+    text.includes('दस्त') ||
+    text.includes('जुलाब')
+  ) {
+    if (
+      text.includes('severe watery') ||
+      text.includes('watery diarrhoea') ||
+      text.includes('watery diarrhea')
+    ) {
+      symptoms.add('Severe watery diarrhea');
+    } else {
+      symptoms.add('Diarrhea');
+    }
   }
 
-  // 13. Respiratory Distress / Difficulty Breathing
-  if (text.includes('saans') || text.includes('respiratory') || text.includes('breath') || text.includes('haanf') || text.includes('श्वास') || text.includes('दम') || text.includes('त्रास')) {
-    symptoms.add('Respiratory Distress');
+  // 15. Polydipsia / Excessive Water Intake / Increased Thirst
+  if (
+    text.includes('drinking a lot of water') ||
+    text.includes('polydipsia') ||
+    text.includes('excessive thirst') ||
+    text.includes('increased thirst') ||
+    text.includes('excessive water') ||
+    text.includes('lots of water') ||
+    text.includes('much water') ||
+    text.includes('lot of water') ||
+    text.includes('ज्यादा पानी') ||
+    text.includes('जास्त पाणी') ||
+    text.includes('खूप पाणी') ||
+    text.includes('पानी पी रही') ||
+    text.includes('pani pi rahi') ||
+    text.includes('paani pee')
+  ) {
+    symptoms.add('Polydipsia');
   }
 
-  // 14. Skin Lesions / Skin Nodules
-  if (text.includes('gaanth') || text.includes('lump') || text.includes('nodule') || text.includes('lesion') || text.includes('fode') || text.includes('गाठ') || text.includes('गाठी')) {
+  // 16. Abdominal Swelling / Bloat / Distension
+  if (
+    text.includes('pet phool') ||
+    text.includes('pet fool') ||
+    (text.includes('पेट') &&
+      (text.includes('फूल') || text.includes('फुग') || text.includes('सूज'))) ||
+    text.includes('abdominal swelling') ||
+    text.includes('abdominal distension') ||
+    text.includes('bloat') ||
+    text.includes('swollen belly')
+  ) {
+    symptoms.add('Abdominal Swelling');
+  }
+
+  // 17. Rapid Breathing / Respiratory Distress / Difficulty Breathing
+  if (
+    text.includes('saans') ||
+    text.includes('सांस') ||
+    text.includes('respiratory') ||
+    text.includes('breath') ||
+    text.includes('breathing') ||
+    text.includes('haanf') ||
+    text.includes('श्वास') ||
+    text.includes('दम') ||
+    text.includes('त्रास')
+  ) {
+    if (
+      text.includes('tez') ||
+      text.includes('fast') ||
+      text.includes('rapid') ||
+      text.includes('तेज') ||
+      text.includes('सामान्य से तेज')
+    ) {
+      symptoms.add('Rapid breathing');
+    } else if (
+      text.includes('difficulty breathing') ||
+      text.includes('सांस लेने में')
+    ) {
+      symptoms.add('Difficulty breathing');
+    } else {
+      symptoms.add('Respiratory Distress');
+    }
+  }
+
+  // 18. Teeth Grinding
+  if (
+    text.includes('daant') ||
+    text.includes('teeth grind') ||
+    text.includes('grinding teeth') ||
+    text.includes('दांत पीस') ||
+    text.includes('दात खाणे') ||
+    text.includes('दात कडकड')
+  ) {
+    symptoms.add('Teeth grinding');
+  }
+
+  // 19. Skin Lesions / Skin Nodules
+  if (
+    text.includes('gaanth') ||
+    text.includes('lump') ||
+    text.includes('nodule') ||
+    text.includes('lesion') ||
+    text.includes('fode') ||
+    text.includes('गाठ') ||
+    text.includes('गाठी')
+  ) {
     symptoms.add('Skin Lesions');
   }
 
-  // 15. Skin Discoloration / Purple Skin
-  if (text.includes('purple skin') || text.includes('red-purple') || text.includes('skin patches') || text.includes('cyanosis') || text.includes('laal chakatte')) {
+  // 20. Skin Discoloration / Purple Skin
+  if (
+    text.includes('purple skin') ||
+    text.includes('red-purple') ||
+    text.includes('skin patches') ||
+    text.includes('cyanosis') ||
+    text.includes('laal chakatte')
+  ) {
     symptoms.add('Skin discoloration');
   }
 
-  // 16. Sudden Mortality / Increased Mortality
-  if (text.includes('died') || text.includes('dead') || text.includes('chickens died') || text.includes('pigs died') || text.includes('mortality') || text.includes('mar gaye') || text.includes('अचानक मृत्यु')) {
+  // 21. Sudden Mortality / Increased Mortality
+  if (
+    text.includes('died') ||
+    text.includes('dead') ||
+    text.includes('chickens died') ||
+    text.includes('pigs died') ||
+    text.includes('mortality') ||
+    text.includes('mar gaye') ||
+    text.includes('अचानक मृत्यु')
+  ) {
     symptoms.add('Sudden Mortality');
   }
 
